@@ -4,7 +4,7 @@ metadata:
   name: boardgame-rollout
   namespace: argo-rollouts  # Set the namespace to argo-rollouts
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: boardgame
