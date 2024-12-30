@@ -1,12 +1,13 @@
-apiVersion: apps/v1
-kind: Deployment # Kubernetes resource kind we are creating
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
-  name: boardgame-deployment
+  name: boardgame-rollout
+  namespace: argo-rollouts  # Set the namespace to argo-rollouts
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: boardgame
-  replicas: 2 # Number of replicas that will be created for this deployment
   template:
     metadata:
       labels:
@@ -14,23 +15,33 @@ spec:
     spec:
       containers:
         - name: boardgame
-          image: niranjan2892/boardgame:v8
+          image: niranjan2892/boardgame:v16
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080 # The port that the container is running on in the cluster
-
+            - containerPort: 8080
+ 
+  # Define canary strategy for deployment
+  strategy:
+    canary:
+      steps:
+        - setWeight: 50
+        - pause: {duration: "10s"}
+        - setWeight: 100
+        - pause: {duration: "10s"}
+ 
 ---
-
-apiVersion: v1 # Kubernetes API version
-kind: Service # Kubernetes resource kind we are creating
-metadata: # Metadata of the resource kind we are creating
+ 
+apiVersion: v1
+kind: Service
+metadata:
   name: boardgame-ssvc
+  namespace: argo-rollouts  # Set the namespace to argo-rollouts
 spec:
   selector:
     app: boardgame
   ports:
     - protocol: "TCP"
-      port: 80 # The port exposed by the service
-      targetPort: 8080 # The port where the container listens
-      nodePort: 30080 # Optional: Specify a static NodePort in the range 30000–32767
-  type: NodePort # Type of the service to expose the application on a NodePort
+      port: 80
+      targetPort: 8080
+      nodePort: 30080
+  type: NodePort
